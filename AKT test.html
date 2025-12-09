@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Axborot texnologiyalari – Nazorat testi</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      color: #222;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+    }
+    h1 {
+      font-size: 1.3rem;
+      margin: 0 0 8px;
+      text-align: center;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 0.95rem;
+    }
+    .btn {
+      display: inline-block;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .question {
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+    .options label {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .options input[type="radio"] {
+      min-width: 18px;
+      min-height: 18px;
+    }
+    .q-number {
+      font-weight: 600;
+      margin-right: 4px;
+      color: #2563eb;
+    }
+    .results {
+      font-size: 0.95rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .badge-bad {
+      background: #ef4444;
+    }
+    .badge-ok {
+      background: #f59e0b;
+    }
+    .badge-good {
+      background: #3b82f6;
+    }
+    .badge-best {
+      background: #22c55e;
+    }
+    .footer-note {
+      font-size: 0.8rem;
+      color: #6b7280;
+      text-align: center;
+      margin-top: 12px;
+    }
+    @media (max-width: 600px) {
+      .card {
+        padding: 14px;
+      }
+      h1 {
+        font-size: 1.15rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card" id="introCard">
+      <h1>Axborot texnologiyalari fanidan nazorat testi</h1>
+      <p class="subtitle">200 ta testdan tasodifiy 50 ta savol tanlanadi</p>
+
+      <label for="groupInput">Guruh raqami</label>
+      <input type="text" id="groupInput" placeholder="Masalan: 23-AT-01" />
+
+      <label for="nameInput" style="margin-top:8px;">F.I.Sh (Ism Familiya)</label>
+      <input type="text" id="nameInput" placeholder="Masalan: Aliyev Ali" />
+
+      <button class="btn btn-primary" id="startBtn">Testni boshlash</button>
+    </div>
+
+    <div id="testCard" class="card" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div>
+          <strong>Talaba:</strong> <span id="studentName"></span><br>
+          <strong>Guruh:</strong> <span id="studentGroup"></span>
+        </div>
+        <div>
+          <strong>Savollar soni:</strong> <span id="questionCount">50</span>
+        </div>
+      </div>
+      <hr>
+      <div id="questionsContainer"></div>
+      <button class="btn btn-primary" id="finishBtn">Natijani ko‘rish</button>
+      <button class="btn btn-secondary" id="restartBtn" style="margin-left:8px;">Qayta boshlash</button>
+    </div>
+
+    <div id="resultCard" class="card" style="display:none;">
+      <h2 style="margin-top:0;font-size:1.1rem;">Natijalar</h2>
+      <div class="results" id="resultText"></div>
+      <button class="btn btn-secondary" id="newTestBtn" style="margin-top:10px;">Yangi test boshlash</button>
+    </div>
+
+    <p class="footer-note">
+      Eslatma: Savollar bazasiga yangi savollarni qo‘shish uchun JavaScript-dagi <code>questions</code> massivini kengaytiring.
+    </p>
+  </div>
+
+  <script>
+    // --- SAVOLLAR BAZASI ---
+    // Hozircha ~60 ta savol qo'yilgan. Siz oldingi 200 ta testni shu formatda qo'shib chiqishingiz mumkin.
+    // Har bir obyekt: text (savol matni), options (4 ta variant), correctIndex (0..3).
+    const questions = [
+      // 1–25: Axborot texnologiyalari fanining predmeti, maqsadi va vazifalari. Axborot texnologiyalari asosiy prinsiplari.
+      {
+        text: "Axborot texnologiyalari fanining asosiy predmeti nima?",
+        options: [
+          "Axborotni yig‘ish, saqlash, qayta ishlash va uzatish jarayonlari",
+          "Faqat kompyuter qurilmalari tuzilishi",
+          "Faqat internet xizmatlari",
+          "Faqat dasturlash tillari"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarining asosiy maqsadi qaysi javobda to‘g‘ri berilgan?",
+        options: [
+          "Axborotni samarali qayta ishlash va foydalanuvchiga qulay shaklda taqdim etish",
+          "Faqat kompyuter sonini oshirish",
+          "Faqat internet tezligini oshirish",
+          "Faqat fayl hajmini kamaytirish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalari vazifasiga kiradi:",
+        options: [
+          "Qaror qabul qilishni axborot bilan ta’minlash",
+          "Faqat kompyuter o‘yinlarini o‘rgatish",
+          "Faqat yozma imtihon o‘tkazish",
+          "Faqat matn terishni o‘rgatish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "“Axborot” tushunchasi qanday izohlanadi?",
+        options: [
+          "Atrof-muhit va hodisalar haqida ma’lumotlar",
+          "Faqat sonlar",
+          "Faqat matn fayllari",
+          "Faqat grafik tasvirlar"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarining “tizimlilik” prinsipi nimani bildiradi?",
+        options: [
+          "Barcha elementlar o‘zaro bog‘liq holda ishlashini",
+          "Faqat bitta dastur ishlatilishini",
+          "Faqat lokal tarmoqdan foydalanishni",
+          "Faqat internetni o‘chirishni"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarining “ishonchlilik” prinsipi nimani ta’minlaydi?",
+        options: [
+          "Natijalarning aniqligi va barqaror ishlashini",
+          "Faqat tez ishlashni",
+          "Faqat chiroyli interfeys yaratishni",
+          "Faqat ko‘p xotira ishlatishni"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "AKT qisqartmasi qanday ochiladi?",
+        options: [
+          "Axborot-kommunikatsiya texnologiyalari",
+          "Axborot-kodlash tarmog‘i",
+          "Avtomatik kompyuter tizimi",
+          "Axboriy kibernetik texnologiya"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarining ta’limdagi ustuvor vazifasi:",
+        options: [
+          "O‘qitish sifatini oshirish va interaktivlikni ta’minlash",
+          "Dars vaqtini orttirish",
+          "Faqat baholarni ko‘rsatish",
+          "Faqat kompyuter xonasini to‘ldirish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot tizimi deganda nimani tushunasiz?",
+        options: [
+          "Axborotni yig‘ish, saqlash, qayta ishlash va uzatishni ta’minlovchi tizimni",
+          "Faqat kompyuterlar majmuasini",
+          "Faqat telefonlar tarmog‘ini",
+          "Faqat printerlar to‘plamini"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarining “tezkorlik” prinsipi:",
+        options: [
+          "Ma’lumotlarni qisqa muddatda qayta ishlashni",
+          "Faqat internet tezligini oshirishni",
+          "Faqat kompyuter sovishini tezlatishni",
+          "Faqat diskni tozalashni"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarining “interaktivlik” prinsipi nimani anglatadi?",
+        options: [
+          "Tizim va foydalanuvchi o‘rtasida ikki tomonlama muloqot mavjudligini",
+          "Faqat ma’lumotlarni saqlashni",
+          "Faqat qog‘ozdagi ishlarni",
+          "Faqat oflayn ishlashni"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Fanda “axborot resurslari” tushunchasi nimani anglatadi?",
+        options: [
+          "Ma’lumotlar bazalari, elektron hujjatlar, saytlar, kutubxonalar",
+          "Faqat qog‘oz hujjatlar",
+          "Faqat kompyuterlar",
+          "Faqat serverlar"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarining “ochiqlik” prinsipi:",
+        options: [
+          "Boshqa tizimlar bilan oson integratsiya qilinishini",
+          "Faqat yopiq formatlardan foydalanishni",
+          "Faqat yagona platformadan foydalanishni",
+          "Faqat offline rejimni"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarini kasbiy faoliyatda qo‘llashning asosiy foydasi:",
+        options: [
+          "Ish unumdorligi va samaradorligini oshirish",
+          "Faqat ish vaqtini cho‘zish",
+          "Faqat hujjatlarni ko‘paytirish",
+          "Faqat xodimlar sonini kamaytirish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarida “foydalanuvchi” atamasi nimaga nisbatan qo‘llanadi?",
+        options: [
+          "Tizimdan foydalanuvchi shaxs yoki tashkilotga",
+          "Faqat administratorga",
+          "Faqat dasturchiga",
+          "Faqat o‘qituvchiga"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarining “moslashuvchanlik” prinsipi:",
+        options: [
+          "Turli sharoit va talablar asosida tizimni qayta sozlash imkoniyati",
+          "Faqat bitta usul bilan ishlash",
+          "Faqat statik ma’lumotlar bilan ishlash",
+          "Faqat yopiq tizimlardan foydalanish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalari yordamida qaysi jarayonlar avtomatlashtirilishi mumkin?",
+        options: [
+          "Hisob-kitob, tahlil, hujjatlashtirish",
+          "Faqat qo‘lda yozish",
+          "Faqat telefon suhbati",
+          "Faqat rasm chizish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalari fani bevosita qaysi soha bilan bog‘liq?",
+        options: [
+          "Ma’lumotlar bazalari va tarmoqlar bilan",
+          "Faqat biologiya bilan",
+          "Faqat tarix bilan",
+          "Faqat geografiya bilan"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarining ijtimoiy ahamiyati:",
+        options: [
+          "Axborot almashinuvini tezlashtiradi va yangi ish o‘rinlari yaratadi",
+          "Faqat kompyuter narxini oshiradi",
+          "Faqat internetni qimmatlashtiradi",
+          "Faqat elektr sarfini ko‘paytiradi"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalaridan foydalanish madaniyati nimani o‘z ichiga oladi?",
+        options: [
+          "Axborot xavfsizligi, etik me’yorlar, mualliflik huquqiga rioya qilishni",
+          "Faqat parolni boshqalarga aytmaslikni",
+          "Faqat kompyuterni o‘chirib qo‘yishni",
+          "Faqat fayl nomini o‘zgartirishni"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalari asosiy prinsiplari sirasiga kirmaydigan tamoyil:",
+        options: [
+          "Noaniqlikni oshirish",
+          "Tizimlilik",
+          "Ishonchlilik",
+          "Samaradorlik"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalari fanining ta’limdagi vazifasi:",
+        options: [
+          "Talabalarda AKT bilan ishlash ko‘nikmalarini shakllantirish",
+          "Faqat nazariy formulalarni yodlash",
+          "Faqat apparat qismlarini sanash",
+          "Faqat kompyuter o‘yinlarini ko‘rsatish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalari yordamida qaysi baholash turi osonlashadi?",
+        options: [
+          "Test natijalarini avtomatik hisoblash",
+          "Faqat og‘zaki baholash",
+          "Faqat yozma ish",
+          "Faqat kundalikni to‘ldirish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Axborot texnologiyalarini noto‘g‘ri qo‘llash oqibati:",
+        options: [
+          "Ma’lumot yo‘qolishi va xavfsizlikning buzilishi",
+          "Har doim tezkor ishlash",
+          "Xotira cheksiz bo‘lishi",
+          "Internet narxi pasayishi"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "AKTni kasbiy faoliyatda qo‘llash misoli:",
+        options: [
+          "Ma’lumotlar bazasida mijozlar bilan ishlash",
+          "Faqat daftarni bezatish",
+          "Faqat telefon raqamlarini yozish",
+          "Faqat rasm chizish"
+        ],
+        correctIndex: 0
+      },
+
+      // 26–40: Interfaol doska, dasturiy ta'minot, sozlash, metodika
+      {
+        text: "Interfaol doska qanday qurilma?",
+        options: [
+          "Kompyuterga ulangan, tegish orqali boshqariladigan displey",
+          "Oddiy bo‘rli doska",
+          "Faqat proyektor ekrani",
+          "Faqat televizor"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doskadan foydalanish uchun nimalar kerak?",
+        options: [
+          "Kompyuter, proyektor va maxsus dastur",
+          "Faqat kompyuter",
+          "Faqat telefon",
+          "Faqat printer"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doska dasturiy ta’minotining asosiy vazifasi:",
+        options: [
+          "Foydalanuvchi harakatini kompyuter buyruqlariga aylantirish",
+          "Faqat audio pleyer vazifasini bajarish",
+          "Faqat internetga ulanib turish",
+          "Faqat fayl arxivlash"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doskani birinchi marta ishlatishda bajariladigan muhim amaliyot:",
+        options: [
+          "Kalibrlash",
+          "Formatlash",
+          "Defragmentatsiya",
+          "Zaxira nusxa olish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doska dasturlaridan birini ko‘rsating:",
+        options: [
+          "SMART Notebook",
+          "WinZip",
+          "Kalkulyator",
+          "Notepad"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doskadan foydalanish metodikasiga kirmaydigan ish:",
+        options: [
+          "Doskani o‘chirib qo‘yib, faqat kitobdan o‘qish",
+          "Interaktiv topshiriqlar tayyorlash",
+          "Rasm va jadval bilan ishlash",
+          "Savol-javob tashkil etish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doskada “stylus” qanday vazifa bajaradi?",
+        options: [
+          "Elektron ruchka sifatida yozish va boshqarish imkonini beradi",
+          "Printerni boshqaradi",
+          "Modemni yoqadi",
+          "Kamerani o‘chiradi"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Kalibrlash nima uchun zarur?",
+        options: [
+          "Ekrandagi nuqta bilan ko‘rsatilgan nuqtani mos tushirish uchun",
+          "Faylni saqlash uchun",
+          "Internetga ulash uchun",
+          "Printerni sozlash uchun"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doska dars samaradorligini qanday oshiradi?",
+        options: [
+          "Talabalarni faollashtiradi va vizual taqdimot yaratadi",
+          "Faqat slayd sonini ko‘paytiradi",
+          "Faqat audio balandligini oshiradi",
+          "Faqat kompyuter sonini ko‘paytiradi"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doskada tayyorlangan materialni qanday saqlash mumkin?",
+        options: [
+          "Kompyuter xotirasiga fayl sifatida saqlash",
+          "Faqat qog‘ozga ko‘chirish",
+          "Saqlab bo‘lmaydi",
+          "Faqat suratga olish mumkin"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doskadan samarali foydalanish uchun o‘qituvchi:",
+        options: [
+          "Dastur menyulari, vositalar paneli va kalibrlashni bilishi kerak",
+          "Faqat kompyuter IP manzilini yodlashi kerak",
+          "Faqat printer drayverini bilishi kerak",
+          "Faqat internet tezligini bilishi kerak"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doskaning texnik ta’minotiga kirmaydigan qurilma:",
+        options: [
+          "Printer",
+          "Proyektor",
+          "Kompyuter",
+          "Ulash kabellari"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doskadan foydalanishda talabalar faoliyatini oshirish usuli:",
+        options: [
+          "Ularni doskaga chiqarib topshiriqlarni bajartirish",
+          "Faqat tinglashni talab qilish",
+          "Faqat daftarlariga yozdirish",
+          "Faqat videoni ko‘rsatish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Interfaol doska dasturida “record” funksiyasi nimaga xizmat qiladi?",
+        options: [
+          "Dars jarayonini video ko‘rinishda yozib olishga",
+          "Faqat audio tinglashga",
+          "Faqat matn yozishga",
+          "Faqat ekran yorqinligini oshirishga"
+        ],
+        correctIndex: 0
+      },
+
+      // 41–60: PowerPoint, Excel, taqdimotlar
+      {
+        text: "MS PowerPoint dasturining asosiy vazifasi nima?",
+        options: [
+          "Taqdimot slaydlarini yaratish",
+          "Jadvalda hisob-kitob qilish",
+          "Audio fayllarni tahrirlash",
+          "Tarmoqni sozlash"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "PowerPoint faylining kengaytmasi qaysi?",
+        options: [
+          ".pptx",
+          ".xlsx",
+          ".docx",
+          ".mp3"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "“Slayd” deganda nimani tushunasiz?",
+        options: [
+          "Taqdimotning alohida sahifasi",
+          "Worddagi sahifa",
+          "Excel satri",
+          "Oddiy rasm fayli"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "PowerPointda animatsiya nima uchun qo‘llanadi?",
+        options: [
+          "Ob’ektlarga harakat va effekt berish uchun",
+          "Faqat fon rangini o‘zgartirish uchun",
+          "Faqat faylni kichraytirish uchun",
+          "Faqat matnni yashirish uchun"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Excel dasturining asosiy vazifasi:",
+        options: [
+          "Jadvallar bilan ishlash va hisob-kitoblarni avtomatlashtirish",
+          "Faqat matn terish",
+          "Faqat slayd yaratish",
+          "Faqat audio pleyer bo‘lish"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Excelda formula qaysi belgidan boshlanadi?",
+        options: [
+          "=",
+          "+",
+          ":",
+          ";"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Exceldagi SUM funksiyasi nima qiladi?",
+        options: [
+          "Tanlangan sonlarni yig‘indisini hisoblaydi",
+          "Sonlarni bo‘ladi",
+          "Sonlarni kvadratga ko‘paytiradi",
+          "Matnni tartiblaydi"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Diagramma nima?",
+        options: [
+          "Jadval ma’lumotlarini grafik ko‘rinishda ifodalash",
+          "Oddiy matn hujjati",
+          "Audio fayl",
+          "Arxivlangan fayl"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Excel interfeysiga kirmaydigan elementni toping:",
+        options: [
+          "Modem sozlamalari",
+          "Ustunlar",
+          "Satrlar",
+          "Formulalar satri"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Excelda katak (cell) manzili qanday ko‘rsatiladi?",
+        options: [
+          "Ustun harfi + qator raqami (masalan, B3)",
+          "Faqat raqam bilan",
+          "Faqat harf bilan",
+          "Faqat rang bilan"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Taqdimot yaratishda noto‘g‘ri yondashuv qaysi?",
+        options: [
+          "Barcha matnni bitta slaydga jamlash",
+          "Asosiy g‘oyani qisqa yozish",
+          "Rasm va diagrammalardan foydalanish",
+          "O‘qilishi oson shrift tanlash"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Excelda shartli formatlash (Conditional Formatting) nima uchun kerak?",
+        options: [
+          "Ma’lum shartga mos kataklarni alohida ko‘rinishda ajratish uchun",
+          "Matnni tarjima qilish uchun",
+          "Faylni arxivlash uchun",
+          "Internetga ulanish uchun"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Ta’lim jarayonida PowerPointdan foydalanishning asosiy maqsadi:",
+        options: [
+          "Mavzuni vizual va tushunarli shaklda bayon etish",
+          "Faqat videoni ko‘rsatish",
+          "Faqat audio tinglash",
+          "Faqat matnni yodlash"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Excelda AutoSum tugmasi qanday vazifa bajaradi?",
+        options: [
+          "Belgilangan kataklar yig‘indisini tezda hisoblaydi",
+          "Faylni yopadi",
+          "Matnni kesib tashlaydi",
+          "Diagrammani o‘chiradi"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Taqdimot muharririga misol bo‘la oladigan dastur:",
+        options: [
+          "PowerPoint",
+          "Excel",
+          "Notepad",
+          "Kalkulyator"
+        ],
+        correctIndex: 0
+      },
+      {
+        text: "Ma’lumotlarni baholash va tahlil qilishda Excelning qaysi imkoniyati muhim?",
+        options: [
+          "Funksiyalar, filtrlar va diagrammalar",
+          "Faqat shrift turini o‘zgartirish",
+          "Faqat katak rangini o‘zgartirish",
+          "Faqat sahifa raqamini qo‘yish"
+        ],
+        correctIndex: 0
+      }
+      // === Eslatma ===
+      // Shu yerga siz oldingi javobimdagi 200 ta testning hammasini shu formatda qo'shib chiqishingiz mumkin.
+      // Massivda nechta savol bo‘lishidan qat’i nazar, dastur ulardan tasodifiy 50 tasini tanlaydi.
+    ];
+
+    // --- YORDAMCHI FUNKSIYALAR ---
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    let selectedQuestions = [];
+
+    const introCard = document.getElementById("introCard");
+    const testCard = document.getElementById("testCard");
+    const resultCard = document.getElementById("resultCard");
+
+    const startBtn = document.getElementById("startBtn");
+    const finishBtn = document.getElementById("finishBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const newTestBtn = document.getElementById("newTestBtn");
+
+    const groupInput = document.getElementById("groupInput");
+    const nameInput = document.getElementById("nameInput");
+    const studentNameSpan = document.getElementById("studentName");
+    const studentGroupSpan = document.getElementById("studentGroup");
+    const questionsContainer = document.getElementById("questionsContainer");
+    const resultText = document.getElementById("resultText");
+
+    function startTest() {
+      const group = groupInput.value.trim();
+      const name = nameInput.value.trim();
+
+      if (!group || !name) {
+        alert("Iltimos, guruh raqami va F.I.Sh ni kiriting.");
+        return;
+      }
+
+      if (questions.length < 50) {
+        alert("Hozircha savollar soni 50 tadan kam. Massivga ko‘proq savol qo‘shing.");
+      }
+
+      studentNameSpan.textContent = name;
+      studentGroupSpan.textContent = group;
+
+      // Tasodifiy 50 ta savol tanlash
+      const shuffled = shuffle([...questions]);
+      selectedQuestions = shuffled.slice(0, 50);
+
+      renderQuestions();
+      introCard.style.display = "none";
+      resultCard.style.display = "none";
+      testCard.style.display = "block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderQuestions() {
+      questionsContainer.innerHTML = "";
+      selectedQuestions.forEach((q, index) => {
+        const qDiv = document.createElement("div");
+        qDiv.className = "q-card";
+
+        const qText = document.createElement("div");
+        qText.className = "question";
+        qText.innerHTML = '<span class="q-number">' + (index + 1) + '.</span> ' + q.text;
+        qDiv.appendChild(qText);
+
+        // Variantlarni tasodifiy aralashtiramiz, to‘g‘ri javob har doim A bo‘lib qolmasin
+        const opts = q.options.map((optText, i) => ({
+          text: optText,
+          isCorrect: i === q.correctIndex
+        }));
+        shuffle(opts);
+
+        const optsDiv = document.createElement("div");
+        optsDiv.className = "options";
+
+        opts.forEach((opt, optIndex) => {
+          const optId = "q" + index + "_opt" + optIndex;
+          const label = document.createElement("label");
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = "q" + index;
+          radio.id = optId;
+          // to‘g‘ri javobga 1, noto‘g‘riga 0 qiymat beramiz
+          radio.value = opt.isCorrect ? "1" : "0";
+
+          const letter = String.fromCharCode(65 + optIndex); // A, B, C, D
+          const spanText = document.createElement("span");
+          spanText.textContent = letter + ") " + opt.text;
+
+          label.appendChild(radio);
+          label.appendChild(spanText);
+          optsDiv.appendChild(label);
+        });
+
+        qDiv.appendChild(optsDiv);
+        questionsContainer.appendChild(qDiv);
+      });
+    }
+
+    function finishTest() {
+      let correctCount = 0;
+      const total = selectedQuestions.length || 50;
+
+      for (let i = 0; i < total; i++) {
+        const selected = document.querySelector('input[name="q' + i + '"]:checked');
+        if (selected && selected.value === "1") {
+          correctCount++;
+        }
+      }
+
+      const percent = Math.round((correctCount / total) * 100);
+      let bahoText = "";
+      let badgeClass = "";
+
+      if (correctCount <= 29) {
+        bahoText = "Qoniqarsiz (2)";
+        badgeClass = "badge-bad";
+      } else if (correctCount >= 30 && correctCount <= 34) {
+        bahoText = "Qoniqarli (3)";
+        badgeClass = "badge-ok";
+      } else if (correctCount >= 35 && correctCount <= 44) {
+        bahoText = "Yaxshi (4)";
+        badgeClass = "badge-good";
+      } else if (correctCount >= 45) {
+        bahoText = "A’lo (5)";
+        badgeClass = "badge-best";
+      }
+
+      resultText.innerHTML =
+        "<p><strong>Talaba:</strong> " + studentNameSpan.textContent +
+        "<br><strong>Guruh:</strong> " + studentGroupSpan.textContent + "</p>" +
+        "<p><strong>To‘g‘ri javoblar soni:</strong> " + correctCount + " / " + total +
+        " (" + percent + "%)</p>" +
+        "<p><strong>Baholash:</strong> <span class='badge " + badgeClass + "'>" + bahoText + "</span></p>";
+
+      testCard.style.display = "none";
+      resultCard.style.display = "block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function restart() {
+      // Faqat savollarni qayta yuklash (ism/guruh saqlanadi)
+      renderQuestions();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function newTest() {
+      // Hammasini boshidan
+      groupInput.value = "";
+      nameInput.value = "";
+      introCard.style.display = "block";
+      testCard.style.display = "none";
+      resultCard.style.display = "none";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    startBtn.addEventListener("click", startTest);
+    finishBtn.addEventListener("click", finishTest);
+    restartBtn.addEventListener("click", restart);
+    newTestBtn.addEventListener("click", newTest);
+  </script>
+</body>
+</html>
